@@ -34,7 +34,7 @@
     "tailwind-merge": "^1.14.0",
     "tailwindcss-animate": "^1.0.7",
     "viem": "2.0.0-alpha.17",
-    "wagmi": "2.0.0-alpha.9",
+    "wagmi": "2.0.0-alpha.10",
     "zod": "^3.22.4"
   },
   "devDependencies": {
@@ -44,7 +44,7 @@
     "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^6.3.0",
     "@typescript-eslint/parser": "^6.3.0",
-    "@wagmi/cli": "2.0.0-alpha.9",
+    "@wagmi/cli": "2.0.0-alpha.10",
     "autoprefixer": "^10.4.14",
     "eslint": "^8.47.0",
     "eslint-config-next": "^13.5.4",
