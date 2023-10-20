@@ -1,6 +1,9 @@
+"use client";
 import Image from "next/image";
 import seedIcon from "@/public/icon/sprout.svg";
 import testAvatar from "@/public/assets/testAvatar.jpg";
+import { Button } from "../ui/button";
+import { Card } from "../ui/card";
 
 interface GemCardProps {
   index: number;
@@ -22,8 +25,8 @@ const GemCard = ({
   supportValue,
 }: GemCardProps) => {
   return (
-    <div className="inline-flex h-28 w-96 items-center justify-center gap-2 rounded-md border border-gray-200 bg-white p-4 shadow">
-      <div className="font-sans text-lg font-semibold leading-tight text-black">
+    <Card className="inline-flex h-28 w-96 items-center justify-center gap-4 p-2">
+      <div className="font-sans text-lg font-semibold leading-tight">
         {index}
       </div>
       {isRevealed ? (
@@ -63,15 +66,13 @@ const GemCard = ({
         <>
           <div className="h-20 w-20 animate-pulse rounded-full bg-slate-300" />
           <div className="inline-flex h-20 w-52 flex-col items-center justify-center gap-1">
-            <div className="inline-flex items-center justify-center gap-2.5 rounded-md bg-slate-900 px-4 py-2">
-              <div className="font-sans text-sm font-medium leading-normal text-white">
-                Join
-              </div>
-            </div>
+            <Button variant="outline" size="lg">
+              Join To Reveal
+            </Button>
           </div>
         </>
       )}
-    </div>
+    </Card>
   );
 };
 
