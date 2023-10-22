@@ -6,7 +6,8 @@ import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 
 interface GemCardProps {
-  index: number;
+  tagId: number;
+  rank: number;
   isRevealed: boolean;
   name?: string;
   avatarUrl?: string;
@@ -16,7 +17,8 @@ interface GemCardProps {
 }
 
 const GemCard = ({
-  index,
+  tagId,
+  rank,
   isRevealed,
   name,
   avatarUrl,
@@ -27,7 +29,7 @@ const GemCard = ({
   return (
     <Card className="inline-flex h-28 w-96 items-center justify-center gap-4 p-2">
       <div className="font-sans text-lg font-semibold leading-tight">
-        {index}
+        {rank}
       </div>
       {isRevealed ? (
         <>

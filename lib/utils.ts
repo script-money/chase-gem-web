@@ -14,9 +14,13 @@ export function atomWithWebStorage(
   const baseAtom = atom(storage.getItem(key) ?? initialValue);
   return atom(
     (get) => get(baseAtom),
-    (get, set, nextValue: string) => {
-      set(baseAtom, nextValue);
-      storage.setItem(key, nextValue);
+    (get, set, nextValue: string | undefined) => {
+      if (nextValue == undefined) {
+        storage.removeItem(key);
+      } else {
+        set(baseAtom, nextValue);
+        storage.setItem(key, nextValue);
+      }
     },
   );
 }

@@ -1,5 +1,4 @@
 import GemCard from "@/components/gem-card/GemCard";
-import { CategoryNames } from "@/lib/types";
 import {
   Accordion,
   AccordionContent,
@@ -8,11 +7,13 @@ import {
 } from "@/components/ui/accordion";
 
 interface CategoryProps {
-  tag: CategoryNames;
+  tagId: number;
+  tag: string;
   defaultOpen?: boolean;
+  gemIds?: BigInt[];
 }
 
-const Category = ({ tag, defaultOpen }: CategoryProps) => {
+const Category = ({ tagId, tag, defaultOpen, gemIds }: CategoryProps) => {
   return (
     <Accordion
       type="single"
@@ -26,12 +27,18 @@ const Category = ({ tag, defaultOpen }: CategoryProps) => {
         </AccordionTrigger>
         <AccordionContent>
           <div className="grid gap-y-4 md:grid-cols-2 lg:grid-cols-3">
-            <GemCard index={1} isRevealed={false} />
-            <GemCard index={2} isRevealed={false} />
-            <GemCard index={3} isRevealed={false} />
-            <GemCard index={4} isRevealed={false} />
-            <GemCard index={5} isRevealed={false} />
-            <GemCard index={6} isRevealed={false} />
+            {gemIds &&
+              gemIds.length > 0 &&
+              gemIds.map((gemId, index) => {
+                return (
+                  <GemCard
+                    key={index}
+                    tagId={tagId}
+                    rank={index + 1}
+                    isRevealed={false}
+                  />
+                );
+              })}
           </div>
         </AccordionContent>
       </AccordionItem>

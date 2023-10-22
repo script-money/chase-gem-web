@@ -405,12 +405,29 @@ export const chaseGemAbi = [
   },
   {
     type: 'function',
+    inputs: [{ name: 'tagId', internalType: 'uint8', type: 'uint8' }],
+    name: 'getGemIdsByTag',
+    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [
       { name: 'gemId', internalType: 'uint256', type: 'uint256' },
       { name: 'fans', internalType: 'address', type: 'address' },
     ],
     name: 'getSupportAmount',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'user', internalType: 'address', type: 'address' },
+      { name: 'tokenIds', internalType: 'uint256[]', type: 'uint256[]' },
+    ],
+    name: 'getUserGemBalances',
+    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
     stateMutability: 'view',
   },
   {
@@ -432,7 +449,10 @@ export const chaseGemAbi = [
   },
   {
     type: 'function',
-    inputs: [{ name: 'baseUri', internalType: 'string', type: 'string' }],
+    inputs: [
+      { name: 'baseUri', internalType: 'string', type: 'string' },
+      { name: 'owner_', internalType: 'address', type: 'address' },
+    ],
     name: 'initialize',
     outputs: [],
     stateMutability: 'nonpayable',
@@ -550,6 +570,16 @@ export const chaseGemAbi = [
     type: 'function',
     inputs: [{ name: 'interfaceId', internalType: 'bytes4', type: 'bytes4' }],
     name: 'supportsInterface',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'uint8', type: 'uint8' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'tagIdToGemIds',
     outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
     stateMutability: 'view',
   },
