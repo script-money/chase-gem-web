@@ -16,6 +16,7 @@ import { chaseGemAbi } from "@/lib/abi";
 import { chaseGemAddress } from "@/lib/address";
 import { RefreshCcw } from "lucide-react";
 import { atomWithWebStorage } from "@/lib/utils";
+import { type GemInfoProps } from "@/lib/types";
 
 const latestTagAtom = atomWithWebStorage("latestTag", "0");
 const latestGemIdAtom = atomWithWebStorage("latestGemId", "0");
@@ -34,6 +35,19 @@ const readTagsArgsAtom = atom((get) =>
     args: [tagId],
   })),
 );
+const getGemsArgsAtom = atom((get) => {
+  const gemIds = get(userHasGemIdsAtom);
+  console.log("gemIds in getGemsArgsAtom", gemIds);
+
+  if (gemIds.length == 0) return [];
+  return gemIds.map((gemId) => ({
+    abi: chaseGemAbi,
+    address: chaseGemAddress,
+    functionName: "getGemById",
+    args: [gemId],
+  }));
+});
+
 const readGemIdsArgsAtom = atom((get) => {
   const latestTag = Number(get(latestTagAtom));
   return Array.from({ length: latestTag }, (_, index) => index + 1).map(
@@ -45,8 +59,9 @@ const readGemIdsArgsAtom = atom((get) => {
     }),
   );
 });
-
 const tagIdToGemIdsAtom = atom<Record<string, bigint[]>>({});
+const userHasGemIdsAtom = atom<bigint[]>([]);
+const gemsInfoAtom = atomWithWebStorage("gemsInfo", JSON.stringify({}));
 
 export default function Page() {
   const { connect } = useConnect();
@@ -60,9 +75,13 @@ export default function Page() {
   const setTags = useSetAtom(tagsAtom);
   const tags = useAtomValue(tagArrayAtom);
   const [tagIdToGemIds, setTagIdToGemIds] = useAtom(tagIdToGemIdsAtom);
+  const setUserHasGemIds = useSetAtom(userHasGemIdsAtom);
+  const getGemsArgs = useAtomValue(getGemsArgsAtom);
+  const [gemsInfo, setGemsInfo] = useAtom(gemsInfoAtom);
 
   const [refreshTags, setRefreshTags] = useState(false);
   const [refreshTGemIds, setRefreshTGemIds] = useState(false);
+  const [readGemInfos, setReadGemInfos] = useState(false);
 
   const { refetch: fetchLatestTagAndLatestGemId } = useReadContracts({
     contracts: [
@@ -109,6 +128,13 @@ export default function Page() {
     },
   });
 
+  const { refetch: fetchGems } = useReadContracts({
+    contracts: getGemsArgs,
+    query: {
+      enabled: false,
+    },
+  });
+
   // helper functions
   const fetchAndSetTags = useCallback(async () => {
     const fetchTagsResult = await fetchTags();
@@ -144,6 +170,38 @@ export default function Page() {
     return result;
   }, [fetchLatestTagAndLatestGemId, setLatestGemId, setLatestTag]);
 
+  const fetchAndSetUserHasGemIds = useCallback(async () => {
+    const result = await getBalance();
+    if (result.data) {
+      console.log("result.data", result.data); // [1n, 2n, 2n] or [0n, 0n ,0n]
+
+      const nonZeroGemIds = result.data.reduce((acc, data, index) => {
+        if (data > 0) {
+          acc.push(BigInt(index + 1));
+        }
+        return acc;
+      }, [] as bigint[]);
+
+      setUserHasGemIds(nonZeroGemIds);
+    }
+    return result;
+  }, [getBalance, setUserHasGemIds]);
+
+  const fetchAndSetGemsInfo = useCallback(async () => {
+    const result = await fetchGems();
+    if (result.data) {
+      const gemsInfo: Record<string, GemInfoProps> = {};
+      result.data.forEach(({ result, status }, index) => {
+        if (status == "success") {
+          gemsInfo[index + 1] = result as unknown as GemInfoProps;
+        }
+      });
+      console.log("fetchGems result", gemsInfo);
+      setGemsInfo(JSON.stringify(gemsInfo));
+    }
+    return result;
+  }, [fetchGems, setGemsInfo]);
+
   // first open app logic
   const isFirstRender = useRef(true);
   useEffect(() => {
@@ -177,23 +235,21 @@ export default function Page() {
   useEffect(() => {
     const firstLoginQuery = async () => {
       if (!address) return;
-      //  TODO: move logics to user login, get nft ids user has, and requery gem data by user nft ids
-      const userBalaces: number[] = [];
-      if (address) {
-        // get user balance ids
-        const result = await getBalance();
-        if (result) {
-          console.log("getBalance", result);
-        }
-      } else {
-        console.log("Not login");
-      }
+      // get user balance ids
+      const gemIdsHaveResult = await fetchAndSetUserHasGemIds();
+      console.log("gemIdsHaveResult", gemIdsHaveResult.data);
+
+      // fetch gems info by user balance ids
+      // console.log("getGemsArgs", getGemsArgs);
+      // const result = await fetchGems();
+      // console.log("fetchGems result", result);
+      setReadGemInfos(true);
     };
 
     firstLoginQuery().catch((e) => {
       console.warn("firstLoginQuery error", e);
     });
-  }, [address, getBalance]);
+  }, [address, fetchAndSetUserHasGemIds]);
 
   // fetch tags
   useEffect(() => {
@@ -217,14 +273,35 @@ export default function Page() {
     });
   }, [refreshTGemIds, fetchGemIds, fetchAndSetGemIds]);
 
+  // fetch gem infos
+  useEffect(() => {
+    if (!readGemInfos) return;
+    const fetchGemsData = async () => {
+      await fetchAndSetGemsInfo();
+    };
+    fetchGemsData().catch((e) => {
+      console.warn("fetchGemsData error", e);
+    });
+  }, [fetchAndSetGemsInfo, readGemInfos]);
+
   // refresh all data
   const handleRefresh = useCallback(async () => {
     console.log("Clean storage and refetch data");
     setTags(undefined);
+    setGemsInfo(undefined);
     await fetchAndSetLatestTagAndLatestGemId();
     setRefreshTags(true);
     setRefreshTGemIds(true);
-  }, [fetchAndSetLatestTagAndLatestGemId, setTags]);
+    if (address) {
+      await fetchAndSetGemsInfo();
+    }
+  }, [
+    setTags,
+    setGemsInfo,
+    fetchAndSetLatestTagAndLatestGemId,
+    address,
+    fetchAndSetGemsInfo,
+  ]);
 
   // connect wallet
   const handleConnect = useCallback(() => {
@@ -243,7 +320,7 @@ export default function Page() {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={void handleRefresh()}
+                onClick={() => void handleRefresh()}
               >
                 <RefreshCcw className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all" />
               </Button>
@@ -261,6 +338,7 @@ export default function Page() {
                 tag={category}
                 defaultOpen={index == 0}
                 gemIds={tagIdToGemIds[index + 1]}
+                data={JSON.parse(gemsInfo) as Record<string, GemInfoProps>}
               />
             );
           })}

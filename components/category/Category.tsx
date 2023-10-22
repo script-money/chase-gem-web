@@ -5,15 +5,17 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { type GemInfoProps } from "@/lib/types";
 
 interface CategoryProps {
   tagId: number;
   tag: string;
   defaultOpen?: boolean;
-  gemIds?: BigInt[];
+  gemIds?: bigint[];
+  data?: Record<string, GemInfoProps>;
 }
 
-const Category = ({ tagId, tag, defaultOpen, gemIds }: CategoryProps) => {
+const Category = ({ tagId, tag, defaultOpen, gemIds, data }: CategoryProps) => {
   return (
     <Accordion
       type="single"
@@ -30,12 +32,19 @@ const Category = ({ tagId, tag, defaultOpen, gemIds }: CategoryProps) => {
             {gemIds &&
               gemIds.length > 0 &&
               gemIds.map((gemId, index) => {
+                const gemInfo = data?.[gemId.toString()];
+                const isRevealed = !!gemInfo;
                 return (
                   <GemCard
                     key={index}
+                    id={gemId}
                     tagId={tagId}
                     rank={index + 1}
-                    isRevealed={false}
+                    isRevealed={isRevealed}
+                    name={gemInfo?.name}
+                    avatarUrl={gemInfo?.avatar}
+                    bio={gemInfo?.bio}
+                    link={gemInfo?.url}
                   />
                 );
               })}
