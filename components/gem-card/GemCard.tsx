@@ -8,7 +8,7 @@ import { useCallback } from "react";
 import { useReadContract, useWriteContract } from "wagmi";
 import { chaseGemAbi } from "@/lib/abi";
 import { chaseGemAddress } from "@/lib/address";
-import { parseEther } from "viem";
+import { formatEther, parseEther } from "viem";
 import { useAtom, useSetAtom } from "jotai";
 import { activeGemIdAtom, gemsInfoAtom } from "@/app/page";
 
@@ -139,7 +139,7 @@ const GemCard = ({ id, isRevealed, name, avatarUrl, bio }: GemCardProps) => {
                 />
               </div>
               <div className="w-56 font-sans text-xs font-medium leading-none text-slate-500">
-                {data ? Number(data) : 0}
+                Ξ {data ? formatEther(data) : 0}
               </div>
             </div>
           </div>

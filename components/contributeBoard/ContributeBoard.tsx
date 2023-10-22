@@ -1,13 +1,14 @@
 import React, { useCallback } from "react";
-import { Card } from "../ui/card";
+import { Card, CardTitle } from "../ui/card";
 import { useReadContract, useWriteContract } from "wagmi";
 import { chaseGemAbi } from "@/lib/abi";
 import { chaseGemAddress } from "@/lib/address";
-import { parseEther, type Address } from "viem";
+import { parseEther, type Address, formatEther } from "viem";
 import { Button } from "../ui/button";
 import { atom, useAtom, useSetAtom } from "jotai";
 import { Input } from "../ui/input";
 import { activeGemIdAtom } from "@/app/page";
+import SupporterInfo from "../supportInfo/SupporterInfo";
 
 interface SupportInfo {
   supporter: Address;
@@ -73,30 +74,23 @@ const ContributeBoard = ({ gemId }: ContributeBoardProps) => {
         onClick={handleCardClick}
         className="max-w-480 flex h-4/5 w-full flex-col bg-opacity-100 p-4 lg:w-1/3"
       >
+        <CardTitle>Supports</CardTitle>
         <div className="flex flex-grow items-center justify-center text-black dark:font-light dark:text-white">
           {supportInfos && supportInfos.length > 0
             ? (supportInfos as SupportInfo[]).map(
                 (supportInfo: SupportInfo, index: number) => {
                   return (
-                    <div
+                    <SupporterInfo
                       key={index}
-                      className="flex items-center justify-between"
-                    >
-                      <div className="flex items-center justify-start">
-                        <div className="font-sans text-lg font-semibold leading-tight">
-                          {supportInfo.supporter}
-                        </div>
-                        <div className="font-sans text-lg font-semibold leading-tight">
-                          {Number(supportInfo.amount)}
-                        </div>
-                      </div>
-                    </div>
+                      address={supportInfo.supporter}
+                      amount={formatEther(supportInfo.amount).toString()}
+                    />
                   );
                 },
               )
             : "No supporter yet, be the first"}
         </div>
-        <div className="flex h-40 items-end justify-end gap-2">
+        <div className="flex items-end justify-end gap-2">
           <Input
             className="w-60"
             type="number"

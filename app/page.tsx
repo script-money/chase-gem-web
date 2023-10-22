@@ -313,7 +313,7 @@ export default function Page() {
         {activeGemId != null && <ContributeBoard gemId={activeGemId} />}
         <div className="w-full lg:w-[1200px]">
           <div className="flex items-baseline justify-between">
-            <div className="h-12 font-mono text-xl font-medium leading-normal text-black dark:font-light dark:text-white lg:text-4xl">
+            <div className="h-12 font-sans text-xl font-medium leading-normal text-black dark:font-light dark:text-white lg:text-4xl">
               {"ChaseGem(💎,🏃)"}
             </div>
             <div className="flex items-center gap-x-4">
