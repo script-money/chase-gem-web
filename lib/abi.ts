@@ -377,6 +377,16 @@ export const chaseGemAbi = [
     type: 'function',
     inputs: [
       { name: '', internalType: 'uint256', type: 'uint256' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'gemIdToSupporters',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'uint256', type: 'uint256' },
       { name: '', internalType: 'uint8', type: 'uint8' },
     ],
     name: 'gemIdToTagIds',
@@ -418,6 +428,24 @@ export const chaseGemAbi = [
     ],
     name: 'getSupportAmount',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'gemId', internalType: 'uint256', type: 'uint256' }],
+    name: 'getSupportersByGemId',
+    outputs: [
+      {
+        name: '',
+        internalType: 'struct ChaseGem.SupporterInfo[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'supporter', internalType: 'address', type: 'address' },
+          { name: 'amount', internalType: 'uint256', type: 'uint256' },
+          { name: 'gemId', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
     stateMutability: 'view',
   },
   {

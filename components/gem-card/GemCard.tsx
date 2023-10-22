@@ -9,6 +9,8 @@ import { useReadContract, useWriteContract } from "wagmi";
 import { chaseGemAbi } from "@/lib/abi";
 import { chaseGemAddress } from "@/lib/address";
 import { parseEther } from "viem";
+import { useAtom, useSetAtom } from "jotai";
+import { activeGemIdAtom, gemsInfoAtom } from "@/app/page";
 
 interface GemCardProps {
   id: bigint;
@@ -22,8 +24,36 @@ interface GemCardProps {
   supportValue?: number;
 }
 
+interface GemInfoOnChain {
+  user: string;
+  avatar: string;
+  name: string;
+  bio: string;
+  url: string;
+}
+
 const GemCard = ({ id, isRevealed, name, avatarUrl, bio }: GemCardProps) => {
+  const [gemsInfo, setGemsInfo] = useAtom(gemsInfoAtom);
+  const setActiveGemId = useSetAtom(activeGemIdAtom);
+
   const { writeContract: joinWrite } = useWriteContract();
+
+  const { data } = useReadContract({
+    abi: chaseGemAbi,
+    address: chaseGemAddress,
+    functionName: "idToSupportAmount",
+    args: [id],
+  });
+
+  const { refetch: fetchGemInfo } = useReadContract({
+    abi: chaseGemAbi,
+    address: chaseGemAddress,
+    functionName: "getGemById",
+    args: [id],
+    query: {
+      enabled: false,
+    },
+  });
 
   const handleClickJoin = useCallback(() => {
     joinWrite(
@@ -38,20 +68,45 @@ const GemCard = ({ id, isRevealed, name, avatarUrl, bio }: GemCardProps) => {
         onSuccess: () => {
           console.log(`success join: ${id}`);
           // refresh
+          fetchGemInfo()
+            .then((res) => {
+              const newGemToBeAdd = {
+                [id.toString()]: res.data as GemInfoOnChain,
+              };
+              const oldGems = JSON.parse(gemsInfo) as Record<
+                string,
+                GemInfoOnChain
+              >;
+              // Combine and save
+              const updatedGemsInfo = {
+                ...oldGems,
+                ...newGemToBeAdd,
+              };
+              setGemsInfo(JSON.stringify(updatedGemsInfo));
+            })
+            .catch((err) => {
+              console.log("fetchGemInfo err", err);
+            });
         },
       },
     );
-  }, [id, joinWrite]);
+  }, [id, joinWrite, gemsInfo, setGemsInfo, fetchGemInfo]);
 
-  const { data } = useReadContract({
-    abi: chaseGemAbi,
-    address: chaseGemAddress,
-    functionName: "idToSupportAmount",
-    args: [id],
-  });
+  const handleOpenBoard = () => {
+    console.log(`Open Gem ${id} board`);
+    setActiveGemId(id);
+  };
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // 阻止事件冒泡到外层 div
+    e.stopPropagation();
+  };
 
   return (
-    <Card className="inline-flex h-28 w-96 items-center justify-center gap-4 p-2">
+    <Card
+      onClick={handleOpenBoard}
+      className="inline-flex h-28 w-96 items-center justify-center gap-4 p-2"
+    >
       <div className="font-sans text-lg font-semibold leading-tight">
         {Number(id)}
       </div>
@@ -73,7 +128,7 @@ const GemCard = ({ id, isRevealed, name, avatarUrl, bio }: GemCardProps) => {
             <div className="h-10 w-52 overflow-auto font-sans text-sm font-normal leading-tight text-slate-900 dark:font-light dark:text-white">
               {bio}
             </div>
-            <div className="inline-flex w-56 items-center justify-start gap-1">
+            <div className="z-10 inline-flex w-56 items-center justify-start gap-1">
               <div className="relative h-4 w-4">
                 <Image
                   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -92,7 +147,10 @@ const GemCard = ({ id, isRevealed, name, avatarUrl, bio }: GemCardProps) => {
       ) : (
         <>
           <div className="h-20 w-20 animate-pulse rounded-full bg-slate-300" />
-          <div className="inline-flex h-20 w-52 flex-col items-center justify-center gap-1">
+          <div
+            onClick={handleCardClick}
+            className="inline-flex h-20 w-52 flex-col items-center justify-center gap-1"
+          >
             <Button variant="outline" size="lg" onClick={handleClickJoin}>
               Join To Reveal
             </Button>

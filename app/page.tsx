@@ -17,6 +17,7 @@ import { chaseGemAddress } from "@/lib/address";
 import { RefreshCcw } from "lucide-react";
 import { atomWithWebStorage } from "@/lib/utils";
 import { type GemInfoProps } from "@/lib/types";
+import ContributeBoard from "@/components/contributeBoard/ContributeBoard";
 
 const latestTagAtom = atomWithWebStorage("latestTag", "0");
 const latestGemIdAtom = atomWithWebStorage("latestGemId", "0");
@@ -37,8 +38,6 @@ const readTagsArgsAtom = atom((get) =>
 );
 const getGemsArgsAtom = atom((get) => {
   const gemIds = get(userHasGemIdsAtom);
-  console.log("gemIds in getGemsArgsAtom", gemIds);
-
   if (gemIds.length == 0) return [];
   return gemIds.map((gemId) => ({
     abi: chaseGemAbi,
@@ -61,7 +60,8 @@ const readGemIdsArgsAtom = atom((get) => {
 });
 const tagIdToGemIdsAtom = atom<Record<string, bigint[]>>({});
 const userHasGemIdsAtom = atom<bigint[]>([]);
-const gemsInfoAtom = atomWithWebStorage("gemsInfo", JSON.stringify({}));
+export const gemsInfoAtom = atomWithWebStorage("gemsInfo", JSON.stringify({}));
+export const activeGemIdAtom = atom<bigint | null>(null);
 
 export default function Page() {
   const { connect } = useConnect();
@@ -78,6 +78,7 @@ export default function Page() {
   const setUserHasGemIds = useSetAtom(userHasGemIdsAtom);
   const getGemsArgs = useAtomValue(getGemsArgsAtom);
   const [gemsInfo, setGemsInfo] = useAtom(gemsInfoAtom);
+  const [activeGemId] = useAtom(activeGemIdAtom);
 
   const [refreshTags, setRefreshTags] = useState(false);
   const [refreshTGemIds, setRefreshTGemIds] = useState(false);
@@ -173,8 +174,6 @@ export default function Page() {
   const fetchAndSetUserHasGemIds = useCallback(async () => {
     const result = await getBalance();
     if (result.data) {
-      console.log("result.data", result.data); // [1n, 2n, 2n] or [0n, 0n ,0n]
-
       const nonZeroGemIds = result.data.reduce((acc, data, index) => {
         if (data > 0) {
           acc.push(BigInt(index + 1));
@@ -188,19 +187,24 @@ export default function Page() {
   }, [getBalance, setUserHasGemIds]);
 
   const fetchAndSetGemsInfo = useCallback(async () => {
+    // TODO check storage if exist then skip fetch Gems otherwise fetch missing gem info
     const result = await fetchGems();
     if (result.data) {
-      const gemsInfo: Record<string, GemInfoProps> = {};
-      result.data.forEach(({ result, status }, index) => {
-        if (status == "success") {
-          gemsInfo[index + 1] = result as unknown as GemInfoProps;
-        }
-      });
-      console.log("fetchGems result", gemsInfo);
-      setGemsInfo(JSON.stringify(gemsInfo));
+      const gemIdsHas = getGemsArgs.map((gemArgs) => gemArgs.args[0]);
+      if (gemIdsHas.length > 0) {
+        const gemsInfo: Record<string, GemInfoProps> = {};
+        result.data.map(({ result, status }, index) => {
+          if (status == "success") {
+            gemsInfo[gemIdsHas[index]!.toString()] =
+              result as unknown as GemInfoProps;
+          }
+        });
+        console.log("fetchGems result save to storage", gemsInfo);
+        setGemsInfo(JSON.stringify(gemsInfo));
+      }
     }
     return result;
-  }, [fetchGems, setGemsInfo]);
+  }, [fetchGems, getGemsArgs, setGemsInfo]);
 
   // first open app logic
   const isFirstRender = useRef(true);
@@ -238,11 +242,6 @@ export default function Page() {
       // get user balance ids
       const gemIdsHaveResult = await fetchAndSetUserHasGemIds();
       console.log("gemIdsHaveResult", gemIdsHaveResult.data);
-
-      // fetch gems info by user balance ids
-      // console.log("getGemsArgs", getGemsArgs);
-      // const result = await fetchGems();
-      // console.log("fetchGems result", result);
       setReadGemInfos(true);
     };
 
@@ -310,10 +309,11 @@ export default function Page() {
 
   return (
     <>
-      <div className="relative mt-4 flex min-h-screen w-full flex-col items-center justify-start gap-[12px] overflow-hidden p-3 lg:mt-16">
+      <div className="relative mt-4 flex min-h-screen w-full flex-col items-center justify-start gap-[12px] overflow-hidden p-3 lg:my-16">
+        {activeGemId != null && <ContributeBoard gemId={activeGemId} />}
         <div className="w-full lg:w-[1200px]">
-          <div className="flex items-center justify-between">
-            <div className="h-12 self-start font-mono text-4xl font-medium leading-normal text-black dark:font-light dark:text-white">
+          <div className="flex items-baseline justify-between">
+            <div className="h-12 font-mono text-xl font-medium leading-normal text-black dark:font-light dark:text-white lg:text-4xl">
               {"ChaseGem(💎,🏃)"}
             </div>
             <div className="flex items-center gap-x-4">
@@ -338,7 +338,11 @@ export default function Page() {
                 tag={category}
                 defaultOpen={index == 0}
                 gemIds={tagIdToGemIds[index + 1]}
-                data={JSON.parse(gemsInfo) as Record<string, GemInfoProps>}
+                data={
+                  typeof gemsInfo === "object"
+                    ? gemsInfo
+                    : (JSON.parse(gemsInfo) as Record<string, GemInfoProps>)
+                }
               />
             );
           })}
